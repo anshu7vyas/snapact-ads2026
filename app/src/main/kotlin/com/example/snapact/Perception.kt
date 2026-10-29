@@ -13,6 +13,7 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
 import java.time.ZoneId
 import java.util.TimeZone
@@ -25,11 +26,12 @@ private val extractor: EntityExtractor by lazy {
 }
 
 private val EMAIL_RE = Regex("""[\w.+-]+@[\w-]+(\.[\w-]+)+""")
-private val PHONE_RE = Regex("""\+?\d[\d\s().-]{7,}\d""")
+private val PHONE_RE = Regex("""\+?\d[\d ().-]{7,}\d""")
 private val TITLE_RE = Regex(
     """\b(Engineer|Manager|Director|Founder|CEO|CTO|VP|Lead|Head|Designer|Developer|President|Officer)\b""",
     RegexOption.IGNORE_CASE,
 )
+private val COMPANY_SUFFIX_RE = Regex("""\b(Inc|LLC|Corp|Labs|Ltd|GmbH|Co|Robotics)\b\.?""", RegexOption.IGNORE_CASE)
 private val NAME_RE = Regex("""^\p{Lu}[\p{L}'.-]*(\s+\p{Lu}[\p{L}'.-]*){1,2}$""")
 
 suspend fun perceive(card: Bitmap, note: String, onStep: (String) -> Unit): CardFacts {
@@ -44,8 +46,9 @@ suspend fun perceive(card: Bitmap, note: String, onStep: (String) -> Unit): Card
     var noteDateTimeMs: Long? = null
 
     val modelReady = try {
-        extractor.downloadModelIfNeeded().await()
-        true
+        val ok = withTimeoutOrNull(3_000) { extractor.downloadModelIfNeeded().await() } != null
+        if (!ok) onStep("⚠️ Entity model download timed out (offline?); using regex fallbacks")
+        ok
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -78,14 +81,17 @@ suspend fun perceive(card: Bitmap, note: String, onStep: (String) -> Unit): Card
     // ML Kit sometimes tags the email domain as a URL; drop those.
     urls.removeAll { u -> emails.any { it.contains(u, ignoreCase = true) } }
 
+    val stem = emails.firstOrNull()?.substringAfter('@')?.substringBefore('.')?.takeIf { it.length >= 2 }
     val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
     val contactBits = (emails + phones + addresses + urls)
     fun isContactLine(l: String) = '@' in l || l.count { it.isDigit() } >= 5 ||
         contactBits.any { it.contains(l, true) || l.contains(it, true) }
 
-    val name = lines.firstOrNull { NAME_RE.matches(it) && it.none(Char::isDigit) && '@' !in it && !TITLE_RE.containsMatchIn(it) }
+    val name = lines.firstOrNull {
+        NAME_RE.matches(it) && it.none(Char::isDigit) && '@' !in it && !TITLE_RE.containsMatchIn(it) &&
+            !COMPANY_SUFFIX_RE.containsMatchIn(it) && (stem == null || !it.replace(" ", "").contains(stem, true))
+    }
     val title = lines.firstOrNull { it != name && TITLE_RE.containsMatchIn(it) && !isContactLine(it) }
-    val stem = emails.firstOrNull()?.substringAfter('@')?.substringBefore('.')?.takeIf { it.length >= 2 }
     val company = stem?.let { s -> lines.firstOrNull { it != name && it != title && !isContactLine(it) && it.contains(s, true) } }
         ?: lines.firstOrNull { it != name && it != title && !isContactLine(it) }
 
@@ -95,7 +101,7 @@ suspend fun perceive(card: Bitmap, note: String, onStep: (String) -> Unit): Card
     )
     onStep(
         "🔒 Note date: " + (noteDateTimeMs?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDateTime().toString() }
-            ?: "none")
+            ?: if (modelReady) "none" else "none (model unavailable)")
     )
 
     return CardFacts(
