@@ -1,5 +1,6 @@
 package com.example.snapact
 
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -45,7 +47,24 @@ fun App() {
     var rung by remember { mutableStateOf<Rung?>(null) }
     val trace = remember { mutableStateListOf<String>() }
     val actions by ActionQueue.actions.collectAsState()
-    val done = remember { mutableStateListOf<String>() } // keyed by tool, not index
+    // Both keyed by tool, not index. Unset selection falls back to DEFAULT_SELECTED.
+    val selected = remember { mutableStateMapOf<String, Boolean>() }
+    val outcomes = remember { mutableStateMapOf<String, Outcome>() }
+    fun isChecked(a: Action) = selected[a.tool] ?: (a.tool in DEFAULT_SELECTED)
+    val pending = actions.filter { isChecked(it) && it.tool !in outcomes }
+
+    // Writes land in place; whatever needs its own app opens afterwards, stacked.
+    fun approveSelected() {
+        val external = pending.filter { a ->
+            val done = approveInPlace(ctx, a)
+            outcomes[a.tool] = done ?: Outcome("↗ Opened")
+            done == null
+        }
+        openAll(ctx, external)
+    }
+    val permissions = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { approveSelected() } // denied → those actions fall back to opening their app
 
     val camUri = remember {
         val f = File(ctx.cacheDir, "card.jpg").apply { createNewFile() }
@@ -90,7 +109,7 @@ fun App() {
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         scope.launch {
-                            busy = true; rung = null; trace.clear(); done.clear(); ActionQueue.reset()
+                            busy = true; rung = null; trace.clear(); selected.clear(); outcomes.clear(); ActionQueue.reset()
                             try {
                                 rung = runLadder(photo!!, note, forced = null) { trace += it }
                             } catch (e: CancellationException) {
@@ -122,17 +141,45 @@ fun App() {
                         rung?.let { AssistChip(onClick = {}, label = { Text(it.badge) }) }
                     }
                 }
+                item {
+                    Button(
+                        enabled = pending.isNotEmpty() && !busy,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            val missing = WRITE_PERMISSIONS.any {
+                                ctx.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
+                            }
+                            if (missing) permissions.launch(WRITE_PERMISSIONS) else approveSelected()
+                        },
+                    ) { Text("✅ Approve selected (${pending.size})") }
+                }
             }
             items(actions, key = { it.tool }) { a ->
+                val outcome = outcomes[a.tool]
                 ElevatedCard(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text(label(a.tool), fontWeight = FontWeight.Bold)
-                        a.args.forEach { (k, v) -> Text("$k: $v", maxLines = 4) }
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            enabled = a.tool !in done,
-                            onClick = { execute(ctx, a); done += a.tool },
-                        ) { Text(if (a.tool in done) "Done ✓" else "Do it") }
+                    Row(Modifier.padding(12.dp)) {
+                        Checkbox(
+                            checked = isChecked(a),
+                            enabled = outcome == null,
+                            onCheckedChange = { selected[a.tool] = it },
+                        )
+                        Column(Modifier.weight(1f)) {
+                            Text(label(a.tool), fontWeight = FontWeight.Bold)
+                            a.args.forEach { (k, v) -> Text("$k: $v", maxLines = 4) }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                outcome?.let { Text(it.message, fontWeight = FontWeight.Bold) }
+                                Spacer(Modifier.weight(1f))
+                                // After a direct write: jump to the result. Before: open the app instead.
+                                val view = outcome?.view
+                                if (view != null) {
+                                    TextButton(onClick = { ctx.startActivity(view) }) { Text("View") }
+                                } else if (outcome == null) {
+                                    TextButton(onClick = { execute(ctx, a); outcomes[a.tool] = Outcome("↗ Opened") }) {
+                                        Text("Open")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
