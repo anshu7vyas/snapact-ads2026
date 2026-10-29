@@ -105,7 +105,7 @@ fun App() {
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            item {
+            if (SHOW_BACKUPS) item {
                 // Debug: pin the ladder to one rung (Auto = normal top-down fallback).
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(null to "Auto", Rung.ON_DEVICE_AGENT to "Agent",

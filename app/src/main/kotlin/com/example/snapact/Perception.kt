@@ -25,6 +25,11 @@ private val extractor: EntityExtractor by lazy {
     EntityExtraction.getClient(EntityExtractorOptions.Builder(EntityExtractorOptions.ENGLISH).build())
 }
 
+/** Starts the one-time entity model download at app launch so the first scan doesn't wait on it. */
+fun prewarmPerception() {
+    extractor.downloadModelIfNeeded()
+}
+
 private val EMAIL_RE = Regex("""[\w.+-]+@[\w-]+(\.[\w-]+)+""")
 private val PHONE_RE = Regex("""\+?\d[\d ().-]{7,}\d""")
 private val TITLE_RE = Regex(
@@ -46,7 +51,8 @@ suspend fun perceive(card: Bitmap, note: String, onStep: (String) -> Unit): Card
     var noteDateTimeMs: Long? = null
 
     val modelReady = try {
-        val ok = withTimeoutOrNull(3_000) { extractor.downloadModelIfNeeded().await() } != null
+        // Task<Void>.await() yields null on success, so signal readiness explicitly.
+        val ok = withTimeoutOrNull(3_000) { extractor.downloadModelIfNeeded().await(); true } == true
         if (!ok) onStep("⚠️ Entity model download timed out (offline?); using regex fallbacks")
         ok
     } catch (e: CancellationException) {
