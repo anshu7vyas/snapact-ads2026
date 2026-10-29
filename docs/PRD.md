@@ -157,6 +157,8 @@ suspend fun runLadder(card: Bitmap, note: String, forced: Rung?, onStep: (String
 
 ## 7. Dependencies
 
+> **As built in PR #0 (verified on the Pixel 11 Pro):** AGP 9.1.1 · Gradle 9.3.1 · Kotlin 2.3.20 · KSP 2.3.12 · compileSdk 37 · targetSdk 36 · minSdk 34 · `entity-extraction 16.0.0-beta6`. `appfunctions alpha13` *requires* AGP ≥ 9.1 and compileSdk ≥ 37. The versions in `gradle/libs.versions.toml` are the source of truth; the block below is the original plan.
+
 ```kotlin
 // app/build.gradle.kts — no Firebase
 implementation("com.google.mlkit:text-recognition:16.0.1")            // on-device OCR (bundled)
@@ -211,7 +213,7 @@ T-10 ──► PR #0 base (WS1 + WS3 pair) ──► merge
 - ⚠️ If KSP/AppFunctions won't compile in 10 minutes: remove those deps, merge without them, and WS3 goes straight to R1b.
 
 ### PR #1 — WS1: App shell, UI & orchestration · `feat/app-ui`
-**Files:** `MainActivity.kt`, `Actions.kt` (+ Gradle and manifest on request)
+**Files:** `MainActivity.kt`, `Actions.kt`, `Ladder.kt` (+ Gradle, manifest and `Model.kt` on request)
 - [ ] `runLadder()` (§6) wired to the Run button inside the existing `scope.launch`
 - [ ] UI collects `ActionQueue.actions.collectAsState()`; cards stream in; `done` keyed by `tool`
 - [ ] Trace panel + step badge (FR-3); rethrow `CancellationException` (fix the starter's catch-all)
