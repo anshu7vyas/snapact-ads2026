@@ -46,6 +46,7 @@ fun App() {
     var photo by remember { mutableStateOf<Bitmap?>(null) }
     var busy by remember { mutableStateOf(false) }
     var rung by remember { mutableStateOf<Rung?>(null) }
+    var forced by remember { mutableStateOf<Rung?>(null) }
     val trace = remember { mutableStateListOf<String>() }
     val actions by ActionQueue.actions.collectAsState()
     // Both keyed by tool, not index. Unset selection falls back to DEFAULT_SELECTED.
@@ -105,6 +106,20 @@ fun App() {
                 )
             }
             item {
+                // Debug: pin the ladder to one rung (Auto = normal top-down fallback).
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(null to "Auto", Rung.ON_DEVICE_AGENT to "Agent",
+                        Rung.ON_DEVICE_PLANNER to "Planner", Rung.RULES to "Rules").forEach { (r, name) ->
+                        FilterChip(
+                            selected = forced == r,
+                            enabled = !busy,
+                            onClick = { forced = r },
+                            label = { Text(name) },
+                        )
+                    }
+                }
+            }
+            item {
                 Button(
                     enabled = photo != null && !busy,
                     modifier = Modifier.fillMaxWidth(),
@@ -112,23 +127,25 @@ fun App() {
                         scope.launch {
                             busy = true; rung = null; trace.clear(); selected.clear(); outcomes.clear(); ActionQueue.reset()
                             try {
-                                rung = runLadder(photo!!, note, forced = null) { trace += it }
+                                rung = runLadder(photo!!, note, forced = forced) { trace += it }
                             } catch (e: CancellationException) {
                                 throw e
                             } catch (e: Exception) {
                                 trace += "⚠️ ${e.message}"
                             } finally {
                                 busy = false
+                                forced = null // debug pin is one-shot; next run is Auto
                             }
                         }
                     },
                 ) { Text(if (busy) "Agent working…" else "🤖 Run agent") }
             }
-            if (trace.isNotEmpty()) {
+            if (busy || trace.isNotEmpty()) {
                 item {
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(12.dp)) {
                             Text("Agent trace", fontWeight = FontWeight.Bold)
+                            if (trace.isEmpty()) Text("Starting…", fontFamily = FontFamily.Monospace)
                             trace.forEach { Text(it, fontFamily = FontFamily.Monospace) }
                             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 8.dp))
                         }
