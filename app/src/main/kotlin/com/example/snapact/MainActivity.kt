@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppContext.app = applicationContext
+        prewarmPerception()
         setContent { SnapActTheme { App() } }
     }
 }
@@ -104,20 +105,6 @@ fun App() {
                     placeholder = { Text("Met at booth 12, wants a demo next Tuesday") },
                     modifier = Modifier.fillMaxWidth(),
                 )
-            }
-            item {
-                // Debug: pin the ladder to one rung (Auto = normal top-down fallback).
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(null to "Auto", Rung.ON_DEVICE_AGENT to "Agent",
-                        Rung.ON_DEVICE_PLANNER to "Planner", Rung.RULES to "Rules").forEach { (r, name) ->
-                        FilterChip(
-                            selected = forced == r,
-                            enabled = !busy,
-                            onClick = { forced = r },
-                            label = { Text(name) },
-                        )
-                    }
-                }
             }
             item {
                 Button(
