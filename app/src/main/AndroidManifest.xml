@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:windowSoftInputMode="adjustResize"
+        android:theme="@style/Theme.SnapAct">
+        <!-- Portrait lock: the camera intent must not recreate the activity and drop the photo. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Camera capture target (TakePicture writes to cacheDir/card.jpg). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fp"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- WS3: KSP generates SnapActAppFunctionService + assets/snapact_app_functions.xml
+             from SnapActTools. No android:process, so ActionQueue stays in-process. -->
+        <service
+            android:name=".SnapActAppFunctionService"
+            android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
+            android:exported="true">
+            <property
+                android:name="android.app.appfunctions.schema"
+                android:value="app_functions_schema.xsd" />
+            <property
+                android:name="android.app.appfunctions.v2"
+                android:value="snapact_app_functions.xml" />
+            <intent-filter>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
+            </intent-filter>
+        </service>
+    </application>
+
+</manifest>

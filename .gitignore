@@ -26,3 +26,6 @@ captures/
 *.aab
 *.keystore
 *.jks
+
+# Kotlin compiler caches
+.kotlin/
