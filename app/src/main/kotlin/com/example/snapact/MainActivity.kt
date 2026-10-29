@@ -134,6 +134,7 @@ fun App() {
                                 trace += "⚠️ ${e.message}"
                             } finally {
                                 busy = false
+                                forced = null // debug pin is one-shot; next run is Auto
                             }
                         }
                     },

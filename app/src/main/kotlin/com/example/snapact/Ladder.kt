@@ -25,7 +25,7 @@ suspend fun runLadder(card: Bitmap, note: String, forced: Rung?, onStep: (String
         }
         val n = ActionQueue.actions.value.size
         if (n > 0) {
-            onStep("${rung.badge} proposed $n action${if (n == 1) "" else "s"}")
+            onStep("${rung.badge} proposed ${actionCount(n)}")
         } else if (forced == rung) {
             onStep("⚠️ Forced ${rung.badge} produced nothing")
         }
@@ -43,7 +43,7 @@ suspend fun runLadder(card: Bitmap, note: String, forced: Rung?, onStep: (String
     onStep(if (forced == Rung.RULES) "⚙️ Running rules" else "⚙️ Falling back to rules")
     ActionQueue.reset()
     rulePlan(facts).filter(::isValid).forEach { ActionQueue.add(it) }
-    onStep("${Rung.RULES.badge} proposed ${ActionQueue.actions.value.size} actions")
+    onStep("${Rung.RULES.badge} proposed ${actionCount(ActionQueue.actions.value.size)}")
     return Rung.RULES
 }
 
@@ -56,6 +56,8 @@ fun isValid(a: Action): Boolean = when (a.tool) {
     else -> false
 }
 
-/** ISO local date-time to the minute ("2026-10-29T14:00"); trailing seconds/offset are ignored. */
+private fun actionCount(n: Int) = "$n action${if (n == 1) "" else "s"}"
+
+/** Local date-time to the minute ("2026-10-29T14:00" or "2026-10-29 14:00"); trailing seconds/offset ignored. */
 private fun parsesAsDateTime(s: String?): Boolean =
-    s != null && s.length >= 16 && runCatching { LocalDateTime.parse(s.take(16)) }.isSuccess
+    s != null && runCatching { LocalDateTime.parse(s.trim().replace(' ', 'T').take(16)) }.isSuccess
