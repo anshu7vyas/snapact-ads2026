@@ -77,7 +77,7 @@ abstract class SnapActTools : AppFunctionService() {
         enqueue("schedule_followup", "title" to title, "start" to start, "notes" to notes)
 
     /**
-     * Searches LinkedIn for the person. Call only when both the person's name and company are known.
+     * Searches LinkedIn for the person. Always call this when the person's name and company are known.
      *
      * @param query The person's name followed by the company, e.g. "Jane Doe Acme Robotics"
      */
