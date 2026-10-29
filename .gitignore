@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Hackathon event resources (not ours to redistribute)
+docs/resources.pdf
+docs/*.jpg
+
+# Firebase config: never commit to a public repo; each teammate downloads their own
+google-services.json
+
+# Gradle / build
+.gradle/
+build/
+**/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+
+# Build outputs and signing
+*.apk
+*.aab
+*.keystore
+*.jks
