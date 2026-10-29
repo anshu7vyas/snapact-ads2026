@@ -1,6 +1,8 @@
 # SnapAct setup (~10 min)
 
-## 1. Firebase
+> **v4 update:** the cloud path is cut, so **skip §1 (Firebase) and the Firebase lines in §3**. Use **minSdk 34** and the dependencies in [PRD §7](PRD.md#7-dependencies). §4–5 (FileProvider) still apply. The starter `MainActivity.kt` is split per PRD §8, PR #0.
+
+## 1. Firebase — ~~skip~~ (cloud cut)
 1. console.firebase.google.com → new project → add Android app (your package name).
 2. Download `google-services.json` → put in `app/`.
 3. Build → **AI Logic** → Get started → choose **Gemini Developer API** (free tier).
