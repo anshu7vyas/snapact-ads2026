@@ -32,6 +32,7 @@ import java.io.File
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppContext.app = applicationContext
         setContent { SnapActTheme { App() } }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.snapact
 
+import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -45,4 +46,9 @@ object ActionQueue {
         if (forRun != runId) return
         _actions.update { list -> if (list.any { it.tool == a.tool }) list else list + a }
     }
+}
+
+/** Application context for ML Kit / AgentRunner clients (WS2, WS3). Set in MainActivity.onCreate. */
+object AppContext {
+    lateinit var app: Context
 }
