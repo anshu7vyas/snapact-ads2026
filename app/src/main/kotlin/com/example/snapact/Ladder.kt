@@ -8,6 +8,10 @@ import java.time.LocalDateTime
 // ---------------------------------------------------------------- Ladder (owner: WS1)
 // Perceive once, then try each planner top-down; stop at the first that yields a valid action.
 
+/** Demo build: only the on-device agent runs and the debug chips are hidden.
+ *  Flip to true to re-enable the Prompt API planner (R1b), rules (R3) and force-step chips. */
+const val SHOW_BACKUPS = false
+
 suspend fun runLadder(card: Bitmap, note: String, forced: Rung?, onStep: (String) -> Unit): Rung? {
     val facts = perceive(card, note, onStep)
     if (forced != null) onStep("⚙️ Forced ${forced.badge}")
@@ -36,10 +40,19 @@ suspend fun runLadder(card: Bitmap, note: String, forced: Rung?, onStep: (String
     if (attempt(Rung.ON_DEVICE_AGENT, 15_000) { onDeviceAgentPlan(facts, note, onStep); null }) {
         return Rung.ON_DEVICE_AGENT
     }
-    // Demo build: the on-device agent is the only path. Planner (R1b) and rules (R3) stay in
-    // the codebase but are not run, so judges see one honest outcome: the agent did it, or it didn't.
-    onStep("⚠️ On-device agent couldn't finish. Tap Run agent to try again.")
-    return null
+    if (!SHOW_BACKUPS) {
+        onStep("⚠️ On-device agent couldn't finish. Tap Run agent to try again.")
+        return null
+    }
+    if (attempt(Rung.ON_DEVICE_PLANNER, 10_000) { onDevicePlannerPlan(facts, note, onStep) }) {
+        return Rung.ON_DEVICE_PLANNER
+    }
+    // A forced model rung that yields nothing still falls through to rules; the trace says so above.
+    onStep(if (forced == Rung.RULES) "⚙️ Running rules" else "⚙️ Falling back to rules")
+    ActionQueue.reset()
+    rulePlan(facts).filter(::isValid).forEach { ActionQueue.add(it) }
+    onStep("${Rung.RULES.badge} proposed ${actionCount(ActionQueue.actions.value.size)}")
+    return Rung.RULES
 }
 
 fun isValid(a: Action): Boolean = when (a.tool) {
