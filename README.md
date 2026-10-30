@@ -49,7 +49,7 @@ adb shell cmd app_function list-app-functions --package com.example.snapact
 
 Launch the app once on Wi-Fi so the small Entity Extraction model downloads. After that, everything runs offline. No Firebase or API keys are needed.
 
-## Built in 90 minutes
+## Build Workflow
 
 Three teammates worked in parallel, each owning separate files against a shared contract (`Model.kt`). Each workstream was reviewed before merge. The plan, requirements and work breakdown are in [docs/PRD.md](docs/PRD.md).
 
