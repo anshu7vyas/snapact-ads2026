@@ -36,7 +36,7 @@ Two fallbacks also exist in code but are switched off in the demo build: a Promp
 
 ## Build & run
 
-- **Device:** a phone with Gemini Nano via AICore. We used a Pixel 11 Pro (Android 17) enrolled in the **AICore Developer Preview** ("Gemini Nano 4 Fast"), which the agent API requires.
+- **Device:** an Android 14+ device that [supports Gemini Nano custom generation and agents](https://developers.google.com/ml-kit/genai#prompt-device) via AICore, with its Google account enrolled in the [**AICore Developer Preview**](https://developers.google.com/ml-kit/genai/aicore-dev-preview). The [ML Kit GenAI agent API](https://developer.android.com/ai/gemini-nano/mlkit-agent-api) (`genai-agent` 1.0.0-alpha1) is an alpha available only through that preview. We tested on a Pixel 11 Pro (Android 17) with "Gemini Nano 4 Fast".
 - **Toolchain:** AGP 9.1.1 · Gradle 9.3.1 · Kotlin 2.3.20 · KSP 2.3.12 · compileSdk 37 · minSdk 34
 - **Libraries:** `genai-agent`, `genai-prompt`, `text-recognition`, `entity-extraction` (ML Kit) · `androidx.appfunctions` + KSP
 
