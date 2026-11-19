@@ -63,3 +63,7 @@ Three teammates worked in parallel, each owning separate files against a shared 
 
 - A friendlier results screen: a one-line live status, with the full agent trace in a "How it decided" sheet
 - A cloud fallback (Firebase AI Logic hybrid inference) for hard-to-read cards
+
+## License
+
+MIT. See [LICENSE](LICENSE).
