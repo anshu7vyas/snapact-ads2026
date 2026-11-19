@@ -10,7 +10,7 @@ Photograph a business card and add a quick note ("met at the booth, wants a demo
 - 🔎 find the person on LinkedIn
 - 📍 show the company on a map
 
-You check the actions you want and tap **Approve** once. The contact and calendar event are written straight to the phone; the email opens as a Gmail draft for you to send. **The card and your note never leave the device, so the whole flow works in airplane mode.**
+You check the actions you want and tap **Approve** once. The contact and calendar event are written straight to the phone; the email opens as a draft in your default email app for you to send. **All inference runs on the device: reading the card and planning the actions need no network, so they work in airplane mode** (after the one-time model download described below). Data leaves SnapAct only through the actions you approve: the contact and event go to your phone's Contacts and Calendar, the draft to your email app, the LinkedIn search sends the name and company to linkedin.com, and the map action passes the address to your maps app.
 
 ## How it works
 
@@ -23,11 +23,11 @@ You check the actions you want and tap **Approve** once. The contact and calenda
                         name / company / title heuristic
      │  CardFacts
      ▼
- DECIDE (on-device)     ML Kit GenAI AgentRunner (Gemini Nano 4 via AICore)
-                        tools = 5 @AppFunction functions (their KDoc is the agent's tool description)
+ DECIDE (on-device)     ML Kit GenAI AgentRunner (Gemini Nano via AICore; tested on Nano 4)
+                        tools = 5 @AppFunctionDeclaration functions (their KDoc is the agent's tool description)
      │  each tool call → ActionQueue (proposed, not executed)
      ▼
- APPROVE (one tap)      checkboxes → contact + calendar written directly · email → Gmail draft
+ APPROVE (one tap)      checkboxes → contact + calendar written directly · email → draft in your email app
 ```
 
 The Track 2 stack end to end: **AppFunctions** (tools) → **Agent** → **AgentRunner** → **AgentEvent** (streamed into a live trace). Tools only enqueue actions. Nothing irreversible happens without the user's consent.
