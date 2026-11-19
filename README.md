@@ -47,7 +47,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell cmd app_function list-app-functions --package com.example.snapact
 ```
 
-Launch the app once on Wi-Fi so the small Entity Extraction model downloads. After that, everything runs offline. No Firebase or API keys are needed.
+Launch the app once on Wi-Fi so the small Entity Extraction model downloads. After that, every on-device step runs offline; only the LinkedIn and map actions need a network. No Firebase or API keys are needed.
 
 ## Build Workflow
 
